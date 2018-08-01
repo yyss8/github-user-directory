@@ -1,0 +1,15 @@
+{
+    "presets":[
+        "env", "react"
+    ],
+    "plugins": [
+        "syntax-class-properties",
+        "transform-class-properties",
+        "transform-object-rest-spread",
+        "syntax-dynamic-import",
+        ["import", {
+            "libraryName": "antd",
+            "style": true
+        }]
+     ]
+}
