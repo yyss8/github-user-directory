@@ -3,11 +3,13 @@ import { connect } from 'react-redux';
 import { Redirect, Switch, Route } from 'react-router-dom';
 
 import asyncComponent from './async-component.jsx';
+import UserBar from 'c/user-bar.jsx';
 import '../styles/main.scss';
 
 const HomeView = asyncComponent( () => import( './home/home.main.jsx' ).then( module => module.default ));
 const UserListView = asyncComponent( () => import( './users/users.main.jsx' ).then( module => module.default ));
-const AuthView = asyncComponent( () => import('./auth.jsx' ).then( module => module.default ));
+const LoginView = asyncComponent( () => import('./login.jsx').then( module => module.default ));
+const Auth = asyncComponent( () => import('./auth.jsx').then( module => module.default ));
 
 class App extends React.Component{
 
@@ -20,24 +22,26 @@ class App extends React.Component{
 
     render(){
 
-        const { global } = this.props;
+        const { global, user } = this.props;
         const progressStyle = {
             width:`${this.props.global.pageLoadingPerc}%` 
         };
 
-        return [
-            <header key='header'>
-                <h3>Github User Directories</h3>
-            </header>,
+        return [,
             <div className='app-wrapper' key='app-wrapper'>
                 <div className='page-loading-bar progress'>
                     <div className="progress-bar" role="progressbar" style={ progressStyle }></div>
                 </div>
-                { !this.props.global.isPageLoaded && <div className='red-loading-view fixed'></div> }
+                { !global.isPageLoaded && <div className='red-loading-view fixed'></div> }
+                <header>
+                    <h3><i className='fab fa-github'></i> Github User Directories</h3>
+                    { user !== null && <UserBar /> }
+                </header>
                 <Switch>
-                    <Route path='/' component={ HomeView } />
-                    <Route path='/users' component={ UserListView } />
-                    <Route path='/oauth' component={ AuthView } />
+                    <Route path='/' exact component={ HomeView } />
+                    <Route path='/users/:direction?/:cursor?' component={ UserListView } />
+                    <Route path='/login' component={ LoginView } />
+                    <Route path='/auth' component={ Auth } />
                 </Switch>
             </div>
         ]
@@ -45,4 +49,4 @@ class App extends React.Component{
 
 }
 
-export default connect( state => ({global:state.global}) )( App );
+export default connect( state => ({global:state.global, user:state.user}) )( App );

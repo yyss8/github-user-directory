@@ -5,11 +5,15 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 const UploaderPlugin = require('webpack-bundle-cdn-uploader');
+const bodyParser = require('body-parser');
+const request = require('request');
 
 module.exports = (env, options) =>{
 
     const onProd = options.mode === 'production'; 
     const publicPath = onProd ? '//s3.scitweb.com/gu/':'/';
+    const graphQlUrl = 'https://api.github.com/graphql';
+    const rsfUrl = 'https://api.github.com';
 
     const HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
         template: './index.html',
@@ -35,6 +39,8 @@ module.exports = (env, options) =>{
         HtmlWebpackPluginConfig,
         new webpack.DefinePlugin({
             PUBLIC:JSON.stringify( publicPath ),
+            RSF_URL:JSON.stringify(rsfUrl),
+            GQL_URL:JSON.stringify(graphQlUrl),
             __VERSION__: JSON.stringify(require('./package.json').version),
             'process.env': {
                 'NODE_ENV': JSON.stringify(options.mode)
@@ -194,7 +200,34 @@ module.exports = (env, options) =>{
             historyApiFallback:true,
             hot:true,
             host:"0.0.0.0",
-            public:"me.scitweb.com:3111"
+            public:"me.scitweb.com:3111",
+            before:(app) =>{
+
+                app.post('/auth', bodyParser.json(), (req, res) =>{
+
+                    const baseUrl = 'https://github.com/login/oauth/access_token';
+                    //unsecured to have secret in client side
+                    const secretKey = '55955160a4425cd4a69b7ed51c3faf78ad00d884';
+                    const clientId = '3aa8f369491b2bb00780';
+                    console.log(req.body);
+                    const params = {
+                        client_id:clientId,
+                        client_secret:secretKey,
+                        code:req.body.code,
+                        state:'gh-schen',
+                        redirect_uri:'http://localhost:3111/auth'
+                    };
+
+                    request(baseUrl, {
+                        uri:baseUrl,
+                        method:'POST',
+                        json:params
+                    }, (err, response) =>{
+                        res.setHeader('Content-Type', 'application/json');
+                        res.status(response.statusCode).send(JSON.stringify(response.body));
+                    });
+                });
+            }
         },
     };
 };
