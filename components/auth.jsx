@@ -25,7 +25,7 @@ class AuthView extends React.Component{
         postJson( params, '/auth' ).then(  res =>{
             if ( res.access_token ){
 
-                const qry = 'query { viewer { login avatarUrl }}';
+                const qry = 'query { viewer { id login avatarUrl }}';
 
                 postJson( {query:qry}, GQL_URL, {
                     headers:{
@@ -35,6 +35,7 @@ class AuthView extends React.Component{
                     const userObj = {
                         avatarUrl:userRes.data.viewer.avatarUrl,
                         username:userRes.data.viewer.login,
+                        id:userRes.data.viewer.id,
                         token:res.access_token
                     };
 

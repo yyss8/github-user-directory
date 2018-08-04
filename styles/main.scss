@@ -207,6 +207,55 @@ header{
     width:400px;
     min-height: 500px;
     border-radius: 5px;
-    
 
+
+}
+
+.modal-container{
+    width: 900px;
+    margin: 0 auto;
+    position: absolute;
+    top:50%;
+    left:50%;
+    transform: translate(-50%,-50%);
+    background-color: white;
+    border-radius: 5px;
+    
+    .modal-header{
+        background-color: $main-color;
+
+        a{
+            color:white;
+            cursor: pointer;
+            &:hover{
+                color:white;
+            }
+        }
+    }
+
+    .modal-body{
+        max-height: 600px;
+        overflow: auto;
+        display: flex;
+        .user-profile{
+            width: 235px;
+
+            p:first-of-type{
+                margin-top: 15px;
+            }
+        }
+
+        .user-counter-repositories{
+            margin-left: 15px;
+
+            .counter-info{
+                padding:15px;
+                border:1px solid lightgray;
+            }
+
+            .user-repositories{
+                margin-top: 15px;
+            }
+        }
+    }
 }
