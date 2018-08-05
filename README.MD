@@ -6,7 +6,7 @@
 
 ## Installation instruction
 
-1. git clone https://github.com/yyss8/github-user-directory.git
+1. git clone https://github.com/yyss8/github-user-directory.git .
 2. run `npm install` to install dependencies
 3. run `npm start`
 4. visit http://localhost:3111/ if browser isn't automatically opened 

@@ -10,7 +10,7 @@ const request = require('request');
 module.exports = (env, options) =>{
 
     const onProd = options.mode === 'production'; 
-    const publicPath = onProd ? '//s3.scitweb.com/gu/':'/';
+    const publicPath = '/';
 
     const HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
         template: './index.html',
@@ -24,8 +24,6 @@ module.exports = (env, options) =>{
         HtmlWebpackPluginConfig,
         new webpack.DefinePlugin({
             PUBLIC:JSON.stringify( publicPath ),
-            RSF_URL:JSON.stringify(rsfUrl),
-            GQL_URL:JSON.stringify(graphQlUrl),
             __VERSION__: JSON.stringify(require('./package.json').version),
             'process.env': {
                 'NODE_ENV': JSON.stringify(options.mode)
@@ -184,8 +182,6 @@ module.exports = (env, options) =>{
             port: 3111,
             historyApiFallback:true,
             hot:true,
-            host:"0.0.0.0",
-            public:"localhost:3111",
             open:true,
             before:(app) =>{
 
