@@ -7,10 +7,19 @@
 ## Installation instruction
 
 1. git clone https://github.com/yyss8/github-user-directory.git
-2. $ npm install
-3. $ npm start
+2. run `npm install` to install dependencies
+3. run `npm start`
 4. visit http://localhost:3111/ if browser isn't automatically opened 
+
+## Test
+
+    Github Api testing requires valid personal access token and Github username 
+
+
+1. change file `test.props.example.js` to `test.props.js` and fill in the personal access token and Github username
+2. then run `npm run test`
+
 
 ## Notes
 
-1. a Github account is required to view the user list
+* a Github account is required to view the user list

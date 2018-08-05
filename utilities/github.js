@@ -28,6 +28,9 @@ export default class {
                     Authorization:`Bearer ${this.token}`
                 }
             }).then( userRes =>{
+
+                console.log(userRes);
+
                 resolve( {
                     avatarUrl:userRes.data.viewer.avatarUrl,
                     username:userRes.data.viewer.login,

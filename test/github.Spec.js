@@ -1,9 +1,9 @@
 import Github from '../utilities/github';
-const testToken     = 'afec4e9dad4a9ae54941c1c5e9fe173ba509e08c';
+import testProps from '../test.props';
 
 describe('GithubApi',() =>{
 
-    const githubApi = new Github( testToken );
+    const githubApi = new Github( testProps.testOAuth );
 
     beforeEach(function() {
         jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
@@ -39,11 +39,11 @@ describe('GithubApi',() =>{
     });
 
     it('should return user profile for specific user', done =>{
-        const testLogin = 'yyss8';
+
         const keys = ['bio', 'avatarUrl', 'company','email', 'location','login', 'url', 'name', 'websiteUrl', 'following','gists', 'repositories'];
 
-        githubApi.getProfile( testLogin ).then( user =>{
-            expect( user.login ).toBe(testLogin);
+        githubApi.getProfile( testProps.testLogin ).then( user =>{
+            expect( user.login ).toBe(testProps.testLogin);
             keys.forEach( key =>{
                 expect( user[key] ).toBeDefined();
             });
@@ -58,9 +58,8 @@ describe('GithubApi',() =>{
     it('should return non-empty user repositories object', done =>{
 
         const keys = ['']
-        const testLogin = 'yyss8';
 
-        githubApi.getUserRepositories( testLogin , 50 )
+        githubApi.getUserRepositories( testProps.testLogin , 50 )
                  .then( data =>{
                     const { user } = data;
                     expect(user.repositories.nodes.length).toBeGreaterThan(0);
