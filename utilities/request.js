@@ -1,4 +1,3 @@
-import { objToQs } from './general'; 
 import qs from 'qs';
 
 export const getJson = (body, url, params = {}) =>{
@@ -28,7 +27,7 @@ export const patchJson = (body, url, params = {}) => {
  * @param {string} url
  * @param {string} method - GET|POST|PUT|DELETE
  * @param {object} params - optional fetch parameters
- * @return {Promise} parse JSON object
+ * @return {Promise} parsed JSON object
  */
 const fetchJson = (body = {}, url = '', method = 'GET', params = {}) =>{
 
@@ -46,6 +45,7 @@ const fetchJson = (body = {}, url = '', method = 'GET', params = {}) =>{
         ...params
     };
 
+    //fetch is not allowing data to be stored in body for GET requests
     if ( method !== 'GET' ){
         fetchParams.body = JSON.stringify( body );
     }

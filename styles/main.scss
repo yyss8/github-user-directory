@@ -154,25 +154,6 @@ header{
 
         }
     }
-
-    .input-group{
-        display: flex;
-        margin-bottom: 15px;
-
-        .input-group-addon{
-            padding-left: 5px;
-            border-bottom: 1px solid #ced4da;
-        }
-
-        .form-control{
-            min-height: 38px;
-            padding: 2px 0 15px 15px;
-            box-shadow: none !important;
-            border-width: 0 0 1px 0;
-            border-radius: 0;
-            font-size: 14px;
-        }
-    }
 }
 
 .user-list-wrapper{

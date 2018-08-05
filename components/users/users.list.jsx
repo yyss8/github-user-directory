@@ -29,7 +29,7 @@ export default class extends React.Component{
                         ref="List"
                         height={300}
                         overscanRowCount={20}
-                        noRowsRenderer={() => <div >{ isLoading ? 'Loading':'No users found' }</div>}
+                        noRowsRenderer={() => <div >{ isLoading ? <h5 className='text-center'><i className='fas fa-circle-notch fa-spin' style={ {fontSize:14} }></i> Loading</h5>:'No users found' }</div>}
                         rowCount={userLength}
                         rowHeight={ 50 }
                         rowRenderer={this._rowRenderer.bind(this)}

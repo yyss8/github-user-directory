@@ -11,8 +11,6 @@ module.exports = (env, options) =>{
 
     const onProd = options.mode === 'production'; 
     const publicPath = onProd ? '//s3.scitweb.com/gu/':'/';
-    const graphQlUrl = 'https://api.github.com/graphql';
-    const rsfUrl = 'https://api.github.com';
 
     const HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
         template: './index.html',

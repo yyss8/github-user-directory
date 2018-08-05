@@ -9,7 +9,7 @@ import AutoSizer from 'react-virtualized/dist/es/AutoSizer';
 import UserBar from 'c/user-bar.jsx';
 import UserList from './users.list.jsx';
 
-import { postJson, patchJson } from 'u/request';
+import GithubApi from 'u/github';
 
 class UserListView extends React.Component{
 
@@ -52,7 +52,7 @@ class UserListView extends React.Component{
         const { match } = this.props;
 
         if ( typeof match.params.login !== 'undefined' ){
-            this.onUserProfile( match.params.login );
+            this.handleUserProfileClicked( match.params.login );
         }
 
         this.fetchUsers(  match.params.direction, match.params.cursor );
@@ -68,43 +68,10 @@ class UserListView extends React.Component{
     fetchUsers(direction = 'after', cursor = null){
 
         this.setState({ users:[], isLoading:true }, () =>{
-            const _direction = direction === 'before' ? 'before':'after';
-            const _cursor = cursor && cursor !== 'none' && cursor !== '' && !cursor.startsWith('login:') ? `, ${_direction}:"${cursor}"`:'';
 
-            const qry = `query {
-                search(query: "type:user", ${_direction === 'before' ? 'last':'first'}: 100, type: USER ${_cursor}) {
-                    userCount
-                    pageInfo {
-                        endCursor
-                        startCursor
-                        hasPreviousPage 
-                        hasNextPage
-                    }
-                    edges {
-                        node {
-                            ... on User {
-                                id
-                                login
-                                avatarUrl
-                            }
-                        }
-                    }
-                }
-            }`;
+            const githubApi = new GithubApi( this.props.user.token );
 
-            postJson( {query:qry}, GQL_URL, {
-                headers:{
-                    Authorization:`Bearer ${this.props.user.token}`
-                }
-            }).then(res =>{
-
-                const { data } = res;
-
-                if ( data === null ){
-                    alert(res.errors[0].message);
-                    this.setState({isLoading:false});
-                    return;
-                }
+            githubApi.getUsers( direction, cursor ).then( data =>{
 
                 const state = updater( this.state,{
                     users:{ $set:data.search.edges.map( userObj => userObj.node ) },
@@ -117,6 +84,9 @@ class UserListView extends React.Component{
                 });
 
                 this.setState(state);
+
+            }, rejected =>{
+                alert(rejected);
             });
         });
     }
@@ -127,65 +97,16 @@ class UserListView extends React.Component{
      * 
      * @param {string} login github username
      */
-    onUserProfile(login){
+    handleUserProfileClicked(login){
 
-        const qry = `query {
-            user(login:"${login}") {    
-                bio
-                avatarUrl
-                company
-                email
-                location
-                login
-                url
-                name
-                websiteUrl
-                following{
-                    totalCount
-                }
-                gists{
-                    totalCount
-                }
-                repositories(first:50){
-                    totalCount
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
-                    nodes {
-                        ... on Repository {
-                            name
-                            description
-                            languages(first:1){
-                                nodes {
-                                    color
-                                    name
-                                }
-                            }
-                            url
-                            forkCount
-                            stargazers{
-                                totalCount
-                            }
-                        }
-                    }
-                }
-            }
-        }`;
+        if ( this.state.viewingUser && this.state.viewingUser.login === login ){
+            this.setState({ isModalShowed:true })
+            return;
+        }
 
-        postJson( {query:qry}, GQL_URL ,{
-            headers:{
-                Authorization:`Bearer ${this.props.user.token}`
-            }
-        }).then( res =>{
-            const { data } = res;
+        const githubApi = new GithubApi(this.props.user.token);
 
-            if ( data === null ){
-                alert(res.errors[0].message);
-                this.setState({isProfileLoading:false});
-                return;
-            }
-
+        githubApi.getProfile( login ).then( user =>{
             const { match } = this.props;
 
             const url = `/users/${match.params.direction || 'after'}/${match.params.cursor || 'none'}/${login}`;
@@ -193,11 +114,11 @@ class UserListView extends React.Component{
             this.props.history.push( url );
 
             this.setState({
-                isProfileLoading:false,
                 isModalShowed:true,
-                viewingUser:data.user
+                viewingUser:user
             });
-
+        }, rejected =>{
+            alert(rejected);
         });
 
     }
@@ -211,67 +132,28 @@ class UserListView extends React.Component{
         this.setState({ isRepLoading:true }, () =>{
 
             const { viewingUser } = this.state;
+            const githubApi = new GithubApi( this.props.user.token );
 
-            const qry = `query {
-                user(login:"${viewingUser.login}") {    
-                    repositories(first:50, after:"${viewingUser.repositories.pageInfo.endCursor}"){
-                        pageInfo {
-                            endCursor
-                            hasNextPage
-                        }
-                        nodes {
-                            ... on Repository {
-                                name
-                                description
-                                languages(first:1){
-                                    nodes {
-                                        color
-                                        name
-                                    }
-                                }
-                                url
-                                forkCount
-                                stargazers{
-                                    totalCount
+            githubApi.getUserRepositories( viewingUser.login, 50 , viewingUser.repositories.pageInfo.endCursor )
+                     .then( data =>{
+                        
+                        const newUser = updater( viewingUser , {
+                            repositories:{
+                                pageInfo:{
+                                    endCursor:{ $set:data.user.repositories.pageInfo.endCursor },
+                                    hasNextPage:{ $set:data.user.repositories.pageInfo.hasNextPage }
+                                },
+                                nodes:{
+                                    $push:data.user.repositories.nodes
                                 }
                             }
-                        }
-                    }
-                }
-            }`;
-    
-            postJson( {query:qry}, GQL_URL ,{
-                headers:{
-                    Authorization:`Bearer ${this.props.user.token}`
-                }
-            }).then( res =>{
-                const { data } = res;
-    
-                if ( data === null ){
-                    alert(res.errors[0].message);
-                    //give it 10 secs to load again if sensor is still in screen view
-                    setTimeout(() => {
-                        this.setState({ isRepLoading:false} );
-                    }, 10 * 1000);
-                    return;
-                }
-    
-                const newUser = updater( viewingUser , {
-                    repositories:{
-                        pageInfo:{
-                            endCursor:{ $set:data.user.repositories.pageInfo.endCursor },
-                            hasNextPage:{ $set:data.user.repositories.pageInfo.hasNextPage }
-                        },
-                        nodes:{
-                            $push:data.user.repositories.nodes
-                        }
-                    }
-                });
+                        });
+        
+                        this.setState({ viewingUser:newUser, isRepLoading:false });
 
-                this.setState({ viewingUser:newUser, isRepLoading:false });
-    
-            });
-    
+                     }, rejected =>{
+                        alert(rejected);
+                     });
 
         });
     }
@@ -296,22 +178,20 @@ class UserListView extends React.Component{
             return;
         }
 
-        patchJson( {bio:newBio}, `${RSF_URL}/user` ,{
-            headers:{
-                Authorization:`Bearer ${this.props.user.token}`
-            }
-        }).then( () =>{
-            const newUser = updater( viewingUser, {
-                bio:{ $set:newBio }
-            });
+        const githubApi = new GithubApi( this.props.user.token );
 
-            this.setState({ viewingUser:newUser }, () =>{
-                alert('Bio updated');
-            });
-        }, () =>{
-            alert('Error happened while updating bio');
-        });
-
+        githubApi.updateProfile( {bio:newBio} )
+                 .then( () =>{
+                    const newUser = updater( viewingUser, {
+                        bio:{ $set:newBio }
+                    });
+        
+                    this.setState({ viewingUser:newUser }, () =>{
+                        alert('Bio updated');
+                    });
+                 }, rejected =>{
+                    alert( rejected );
+                 });
     }
 
     render(){
@@ -321,17 +201,17 @@ class UserListView extends React.Component{
 
         const listParams = {
             users, total, startCursor,endCursor, hasNext:hasNextPage, hasPrevious:hasPreviousPage, isLoading,
-            fetchUsers:this.fetchUsers.bind(this), onProfileClicked:this.onUserProfile.bind(this)
+            fetchUsers:this.fetchUsers.bind(this), onProfileClicked:this.handleUserProfileClicked.bind(this)
         };
 
         return (
             <div className='user-list-wrapper'>
-                { user !== null && <UserBar onProfileClicked={this.onUserProfile.bind(this)} /> }
+                { user !== null && <UserBar onProfileClicked={this.handleUserProfileClicked.bind(this)} /> }
                <UserList {...listParams} />
-               {viewingUser !== null && <Modal isOpen={ this.state.isModalShowed } onRequestClose={  () => this.setState({ isModalShowed:false, viewingUser:null }) } className="user-profile-modal" >
+               {viewingUser !== null && <Modal isOpen={ this.state.isModalShowed } onRequestClose={  () => this.setState({ isModalShowed:false }) } className="user-profile-modal" >
                     <div className='modal-container'>
                         <div className='modal-header'>
-                            <a onClick={ () => this.setState({ isModalShowed:false, viewingUser:null }) }>Return</a>
+                            <a onClick={ () => this.setState({ isModalShowed:false }) }>Return</a>
                         </div>
                         <div className='modal-body'>
                             <div className='user-profile'>

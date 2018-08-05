@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import qs from 'qs';
 import { withRouter } from 'react-router-dom';
 
+import GithubApi from 'u/github';
 import { userLogin } from 'a/user';
 import { postJson } from 'u/request';
 
@@ -19,30 +20,20 @@ class AuthView extends React.Component{
         }
 
         const params = {
-            code:parsed.code,
+            code:parsed.code
         };
 
         postJson( params, '/auth' ).then(  res =>{
+
             if ( res.access_token ){
-
-                const qry = 'query { viewer { id login avatarUrl }}';
-
-                postJson( {query:qry}, GQL_URL, {
-                    headers:{
-                        Authorization:`Bearer ${res.access_token}`
-                    }
-                }).then( userRes =>{
-                    const userObj = {
-                        avatarUrl:userRes.data.viewer.avatarUrl,
-                        username:userRes.data.viewer.login,
-                        id:userRes.data.viewer.id,
-                        token:res.access_token
-                    };
-
+                const githubApi = new GithubApi(res.access_token);
+                githubApi.getCurrentUserDetail( res.access_token ).then( userObj =>{
                     localStorage.setItem('user', JSON.stringify(userObj));
                     this.props.dispatch(userLogin(userObj));
                     this.props.history.push('/users');
-                })
+                }, rejected =>{
+                    alert('error happened while fetching user data');
+                });
                 return;
             }
 
@@ -58,7 +49,7 @@ class AuthView extends React.Component{
     render(){
 
         return (
-            <div className='auth-wrapper' style={ {textAlign:'center'} }>
+            <div className='auth-wrapper text-center'>
                 <h4>Authorizing</h4>
             </div>
         );

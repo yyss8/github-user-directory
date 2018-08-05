@@ -1,6 +1,6 @@
 # Github User Directory
 
-    <img src="https://github.com/yyss8/github-user-directory/blob/dev/demo/demo-screenshot.png?raw=true" width="300">
+<img src="https://github.com/yyss8/github-user-directory/blob/dev/demo/demo-screenshot.png?raw=true" width="300">
 
     An interactive directory of github users, as well as an editable profile
 
