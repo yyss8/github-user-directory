@@ -17,6 +17,10 @@ export const deleteJson = (body, url, params = {}) =>{
     return fetchJson(body, url, 'DELETE', params);
 }
 
+export const patchJson = (body, url, params = {}) => {
+    return fetchJson(body, url, 'PATCH', params);
+}
+
 /**
  * @description 
  * general JSON fetch function

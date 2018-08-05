@@ -1,10 +1,7 @@
 import React from 'react';
-import updater from 'immutability-helper';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
+import { withRouter, Link } from 'react-router-dom';
 
-import { userLogin } from 'a/user';
-import { postJson } from 'u/request';
 import { objToQs } from 'u/general'; 
 
 
@@ -18,30 +15,13 @@ class LoginView extends React.Component{
         isLoading:false
     }
 
-    constructor(props){
-        super(props);
-
-        this.formContentOnchange.bind(this);
-    }
-
     componentDidMount(){
         if ( this.props.user !== null ){
             this.props.history.push('/users');
         }
     }
 
-    formContentOnchange( value, field ){
-        
-        const loginForm = updater( this.state.loginForm, {
-            [field]:{ $set:value }
-        });
-        
-        this.setState({
-            loginForm
-        });
-    }
-
-    fetchOAuth( e ){
+    redirectToOAuthPage( e ){
 
         e.target.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i>";
         const baseUrl = 'https://github.com/login/oauth/authorize';
@@ -64,9 +44,10 @@ class LoginView extends React.Component{
         return (
             <div className='login-wrapper'>
                 <div className="form-group action">
-                    <button id="login-btn" className="btn btn-gh" onClick={ this.fetchOAuth.bind(this) }>Connect to Github</button>
+                    <h6>Github account is required to view the user list</h6>
+                    <button id="login-btn" className="btn btn-gh" onClick={ this.redirectToOAuthPage.bind(this) }>Connect to Github</button>
                 </div>
-                <a className='return' onClick={ () => this.props.history.goBack() }>Return</a>
+                <Link className='return' to='/'>Return</Link>
                 { this.state.messageField !== false && <div className={ `message-field ${this.state.messageField.type ? `text-${this.state.messageField.type}` :''}` }>
                     { this.state.messageField.text || '' }
                 </div>}

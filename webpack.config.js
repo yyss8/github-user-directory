@@ -4,7 +4,6 @@ const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
-const UploaderPlugin = require('webpack-bundle-cdn-uploader');
 const bodyParser = require('body-parser');
 const request = require('request');
 
@@ -22,18 +21,6 @@ module.exports = (env, options) =>{
             publicPath
         }
     })
-
-    // const uploaderOptions = {
-    //     cdn:{
-    //         type:'qiniu',
-    //         accessKey:'Z_6DbkFbMWdk1YwwUVXwIhzpbNaCOr5wf8P_WJEU',
-    //         secretKey:'n3gDmFz7FaJqjJUsLFT3mCCcBDVXIMXgmiHk9Rjh',
-    //         bucket:'blp-static',
-    //         host:'z1'
-    //     },
-    //     deletePrevious:true,
-    //     deleteOutput:true
-    // };
 
     let plugins = [
         HtmlWebpackPluginConfig,
@@ -200,7 +187,8 @@ module.exports = (env, options) =>{
             historyApiFallback:true,
             hot:true,
             host:"0.0.0.0",
-            public:"me.scitweb.com:3111",
+            public:"localhost:3111",
+            open:true,
             before:(app) =>{
 
                 //handle oauth access token fetching

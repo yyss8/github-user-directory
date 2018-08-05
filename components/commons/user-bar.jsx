@@ -19,7 +19,7 @@ class UserBar extends React.Component{
 
         return(
             <div className='user-bar'>
-                <img src={ user.avatarUrl }  height="30"/> Welcome, {user.username} | <a className='signout-btn' onClick={ this.onSignOut.bind(this) }>Sign Out</a>
+                <img src={ user.avatarUrl }  height="30"/> Welcome, <a href="javascript:void(0)" onClick={ () => this.props.onProfileClicked(user.username) }>{user.username}</a> | <a className='signout-btn' onClick={ this.onSignOut.bind(this) }>Sign Out</a>
             </div>
         );
     }

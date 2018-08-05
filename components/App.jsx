@@ -1,9 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Redirect, Switch, Route } from 'react-router-dom';
+import { Switch, Route } from 'react-router-dom';
 
 import asyncComponent from './async-component.jsx';
-import UserBar from 'c/user-bar.jsx';
 import '../styles/main.scss';
 
 const HomeView = asyncComponent( () => import( './home/home.main.jsx' ).then( module => module.default ));
@@ -32,14 +31,13 @@ class App extends React.Component{
                 <div className='page-loading-bar progress'>
                     <div className="progress-bar" role="progressbar" style={ progressStyle }></div>
                 </div>
-                { !global.isPageLoaded && <div className='red-loading-view fixed'></div> }
                 <header>
                     <h3><i className='fab fa-github'></i> Github User Directories</h3>
-                    { user !== null && <UserBar /> }
                 </header>
+                { !global.isPageLoaded && <div className='red-loading-view fixed'></div> }
                 <Switch>
                     <Route path='/' exact component={ HomeView } />
-                    <Route path='/users/:direction?/:cursor?' component={ UserListView } />
+                    <Route path='/users/:direction?/:cursor?/:login?' component={ UserListView } />
                     <Route path='/login' component={ LoginView } />
                     <Route path='/auth' component={ Auth } />
                 </Switch>

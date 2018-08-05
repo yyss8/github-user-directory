@@ -50,19 +50,6 @@ header{
     text-align: center;
     color:#666;
     margin-bottom: 50px;
-
-    .user-bar{
-        text-align: right;
-        cursor: default;
-        border-bottom: 1px solid lightgray;
-        padding:15px 0;
-
-        .signout-btn{
-            color:$main-color;
-            cursor: pointer;
-            font-weight: 700;
-        }
-    }
 }
 
 .app-wrapper{
@@ -189,6 +176,21 @@ header{
 }
 
 .user-list-wrapper{
+
+    .user-bar{
+        text-align: right;
+        cursor: default;
+        border-bottom: 1px solid lightgray;
+        padding:15px 0;
+        margin-top:-20px;
+        margin-bottom: 15px;
+        .signout-btn{
+            color:$main-color;
+            cursor: pointer;
+            font-weight: 700;
+        }
+    }
+
     .filters{
         margin-bottom: 15px;
 
@@ -197,18 +199,6 @@ header{
             color:$main-color;
         }
     }
-}
-
-.user-profile-wrapper{
-
-    z-index: 3;
-    position: relative;
-    background-color: white;
-    width:400px;
-    min-height: 500px;
-    border-radius: 5px;
-
-
 }
 
 .modal-container{
@@ -234,27 +224,81 @@ header{
     }
 
     .modal-body{
-        max-height: 600px;
+        max-height: 800px;
         overflow: auto;
         display: flex;
         .user-profile{
             width: 235px;
 
-            p:first-of-type{
-                margin-top: 15px;
+            .btn{
+                display: inline-block;
+                width: 100%;
+            }
+
+            .bio{
+                margin: 15px 0;
+            }
+
+            .edit-btn{
+                color:$main-color;
+                cursor: pointer;
+            }
+
+            p{
+                display: inline-block;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                width: 100%;
+                margin: 0;
             }
         }
 
         .user-counter-repositories{
             margin-left: 15px;
-
+            width: 100%;
             .counter-info{
                 padding:15px;
                 border:1px solid lightgray;
+
+                p{
+                    margin-bottom: 5px;
+                }
             }
 
             .user-repositories{
-                margin-top: 15px;
+                .user-repository{
+                    padding:10px;
+                    border-radius: 3px;
+                    border:1px solid lightgray;
+
+                    p:first-of-type{
+                        height: 61px;
+                        font-size: 15px;
+                        overflow: hidden;
+                        margin-top: 10px;
+                        text-overflow: ellipsis;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 3;
+                        -webkit-box-orient: vertical;
+                        word-break: break-word;
+                        color: #232326;
+                        line-height: 15px;
+                    }
+                }
+
+                .rep-load-more{
+
+                    text-align: center;
+                    margin-top: 15px;
+
+                    a{
+                        color:white;
+                    }
+
+                    i{
+                        color:$main-color;
+                    }
+                }
             }
         }
     }

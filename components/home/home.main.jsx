@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import updater from 'immutability-helper';
 import { connect } from 'react-redux';
 
 class HomeView extends React.Component{

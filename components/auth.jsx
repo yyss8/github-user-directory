@@ -12,7 +12,7 @@ class AuthView extends React.Component{
     componentWillMount(){
 
         const parsed = qs.parse( location.search.replace('?','') );
-        console.log(parsed);
+
         if ( !parsed.code ){
             this.props.history.push('/');
             return;

@@ -2,12 +2,14 @@ import React from 'react';
 import updater from 'immutability-helper';
 import { connect } from 'react-redux';
 import Modal from 'react-modal';
-import { withRouter, Switch, Route } from 'react-router-dom';
+import { withRouter } from 'react-router-dom';
+import Grid from 'react-virtualized/dist/es/Grid';
+import AutoSizer from 'react-virtualized/dist/es/AutoSizer';
 
+import UserBar from 'c/user-bar.jsx';
 import UserList from './users.list.jsx';
-import UserProfile from './users.profile.jsx';
 
-import { postJson } from 'u/request';
+import { postJson, patchJson } from 'u/request';
 
 class UserListView extends React.Component{
 
@@ -20,13 +22,18 @@ class UserListView extends React.Component{
         endCursor:'',
         isModalShowed:false,
         isProfileLoading:false,
-        viewingUser:null
+        viewingUser:null,
+        isRepLoading:false
     };
 
     constructor(props){
         super(props);
 
         this.fetchUsers.bind(this);
+    }
+
+    componentWillMount() {
+        Modal.setAppElement('body');
     }
 
     componentDidUpdate( prevProps ){
@@ -38,19 +45,34 @@ class UserListView extends React.Component{
     componentDidMount(){
 
         if ( !this.props.user ){
-            this.props.history.push('/');
+            this.props.history.push('/login');
             return;
         }
 
-        this.fetchUsers(  this.props.match.params.direction, this.props.match.params.cursor );
+        const { match } = this.props;
+
+        if ( typeof match.params.login !== 'undefined' ){
+            this.onUserProfile( match.params.login );
+        }
+
+        this.fetchUsers(  match.params.direction, match.params.cursor );
     }
 
+    /**
+     * @description
+     * fetch user list
+     * 
+     * @param {string} direction used to determine pagination direction
+     * @param {string} cursor current pagination cursor
+     */
     fetchUsers(direction = 'after', cursor = null){
 
         this.setState({ users:[], isLoading:true }, () =>{
-            const _cursor = cursor && cursor !== '' ? `, ${direction}:"${cursor}"`:'';
+            const _direction = direction === 'before' ? 'before':'after';
+            const _cursor = cursor && cursor !== 'none' && cursor !== '' && !cursor.startsWith('login:') ? `, ${_direction}:"${cursor}"`:'';
+
             const qry = `query {
-                search(query: "type:user", ${direction === 'after' ? 'first':'last'}: 100, type: USER ${_cursor}) {
+                search(query: "type:user", ${_direction === 'before' ? 'last':'first'}: 100, type: USER ${_cursor}) {
                     userCount
                     pageInfo {
                         endCursor
@@ -99,55 +121,57 @@ class UserListView extends React.Component{
         });
     }
 
-    onUserProfile(index){
-
-        const { users } = this.state;
+    /**
+     * @description 
+     * handle clicked user profile fetching
+     * 
+     * @param {string} login github username
+     */
+    onUserProfile(login){
 
         const qry = `query {
-                user(login:"${users[index].login}") {    
-                    bio
-                    avatarUrl
-                    company
-                    email
-                    location
-                    login
-                    url
-                    name
-                    websiteUrl
-                    following{
-                        totalCount
+            user(login:"${login}") {    
+                bio
+                avatarUrl
+                company
+                email
+                location
+                login
+                url
+                name
+                websiteUrl
+                following{
+                    totalCount
+                }
+                gists{
+                    totalCount
+                }
+                repositories(first:50){
+                    totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
                     }
-                    gists{
-                        totalCount
-                    }
-                    repositories(first:100){
-                        totalCount
-                        pageInfo {
-                            endCursor
-                            startCursor
-                            hasPreviousPage 
-                            hasNextPage
-                        }
-                        nodes {
-                            ... on Repository {
-                                name
-                                description
-                                languages(first:1){
-                                    nodes {
-                                        color
-                                        name
-                                    }
+                    nodes {
+                        ... on Repository {
+                            name
+                            description
+                            languages(first:1){
+                                nodes {
+                                    color
+                                    name
                                 }
-                                projectsUrl
-                                forkCount
-                                stargazers{
-                                    totalCount
-                                }
+                            }
+                            url
+                            forkCount
+                            stargazers{
+                                totalCount
                             }
                         }
                     }
                 }
-            }`;
+            }
+        }`;
 
         postJson( {query:qry}, GQL_URL ,{
             headers:{
@@ -162,6 +186,12 @@ class UserListView extends React.Component{
                 return;
             }
 
+            const { match } = this.props;
+
+            const url = `/users/${match.params.direction || 'after'}/${match.params.cursor || 'none'}/${login}`;
+
+            this.props.history.push( url );
+
             this.setState({
                 isProfileLoading:false,
                 isModalShowed:true,
@@ -172,26 +202,116 @@ class UserListView extends React.Component{
 
     }
 
-    getUserRepositories(){
+    /**
+     * @description
+     * handle additonal repositories fetching for current viewing user
+     */
+    fetchMoreUserRepositories( ){
+        
+        this.setState({ isRepLoading:true }, () =>{
 
+            const { viewingUser } = this.state;
+
+            const qry = `query {
+                user(login:"${viewingUser.login}") {    
+                    repositories(first:50, after:"${viewingUser.repositories.pageInfo.endCursor}"){
+                        pageInfo {
+                            endCursor
+                            hasNextPage
+                        }
+                        nodes {
+                            ... on Repository {
+                                name
+                                description
+                                languages(first:1){
+                                    nodes {
+                                        color
+                                        name
+                                    }
+                                }
+                                url
+                                forkCount
+                                stargazers{
+                                    totalCount
+                                }
+                            }
+                        }
+                    }
+                }
+            }`;
+    
+            postJson( {query:qry}, GQL_URL ,{
+                headers:{
+                    Authorization:`Bearer ${this.props.user.token}`
+                }
+            }).then( res =>{
+                const { data } = res;
+    
+                if ( data === null ){
+                    alert(res.errors[0].message);
+                    //give it 10 secs to load again if sensor is still in screen view
+                    setTimeout(() => {
+                        this.setState({ isRepLoading:false} );
+                    }, 10 * 1000);
+                    return;
+                }
+    
+                const newUser = updater( viewingUser , {
+                    repositories:{
+                        pageInfo:{
+                            endCursor:{ $set:data.user.repositories.pageInfo.endCursor },
+                            hasNextPage:{ $set:data.user.repositories.pageInfo.hasNextPage }
+                        },
+                        nodes:{
+                            $push:data.user.repositories.nodes
+                        }
+                    }
+                });
+
+                this.setState({ viewingUser:newUser, isRepLoading:false });
+    
+            });
+    
+
+        });
     }
 
-    onSaveBio(){
+    /**
+     * @description 
+     * handle current user bio updating
+     */
+    onAddBio(){
 
-        if ( this.props.user.login !== this.state.viewingUser.login ){
+        const { user } = this.props;
+        const { viewingUser } = this.state;
+
+        if ( user === null || user.username !== viewingUser.login ){
+            alert('You aren\'t authorized to perform this action');
             return;
         }
 
-        const qry = ``;
+        const newBio = prompt( 'Enter new bio', viewingUser.bio);
 
-    }
+        if ( newBio === null){
+            return;
+        }
 
-    onAddBio(){
+        patchJson( {bio:newBio}, `${RSF_URL}/user` ,{
+            headers:{
+                Authorization:`Bearer ${this.props.user.token}`
+            }
+        }).then( () =>{
+            const newUser = updater( viewingUser, {
+                bio:{ $set:newBio }
+            });
 
-    }
+            this.setState({ viewingUser:newUser }, () =>{
+                alert('Bio updated');
+            });
+        }, () =>{
+            alert('Error happened while updating bio');
+        });
 
-    componentWillMount() {
-        Modal.setAppElement('body');
     }
 
     render(){
@@ -206,27 +326,25 @@ class UserListView extends React.Component{
 
         return (
             <div className='user-list-wrapper'>
-               <div className='filters text-right'>
-                    <a onClick={ this.fetchUsers.bind(this) }><i className="fas fa-sync-alt"></i></a>
-               </div>
+                { user !== null && <UserBar onProfileClicked={this.onUserProfile.bind(this)} /> }
                <UserList {...listParams} />
                {viewingUser !== null && <Modal isOpen={ this.state.isModalShowed } onRequestClose={  () => this.setState({ isModalShowed:false, viewingUser:null }) } className="user-profile-modal" >
                     <div className='modal-container'>
                         <div className='modal-header'>
-                            <a onClick={ () => this.setState({ isModalShowed:false, viewingUser:null }) }>Cancel</a>
-                            <a>{ viewingUser.login === user.login ? 'Save':'' }</a>
+                            <a onClick={ () => this.setState({ isModalShowed:false, viewingUser:null }) }>Return</a>
                         </div>
                         <div className='modal-body'>
                             <div className='user-profile'>
                                 <img src={ viewingUser.avatarUrl } width="229" height="230" />
                                 <h4>{ viewingUser.name }</h4>
                                 <h6>{ viewingUser.login }</h6>
-                                { viewingUser.login === user.login ? (
-                                    viewingUser.bio === '' ? <button onClick={ this.onAddBio.bind(this) }>Add Bio</button>:(<h6>{ viewingUser.bio } <a onClick={ this.onAddBio.bind(this) }><i className='fas fa-edit'></i></a></h6>)
-                                ):viewingUser.bio }
-                                <p><i className='fas fa-location-arrow'></i> { viewingUser.location }</p>
+                                { viewingUser.login === user.username ? (
+                                    viewingUser.bio === '' ? <button className='btn btn-gh' onClick={ this.onAddBio.bind(this) }>Add Bio</button>:(<h6 className='bio'>{ viewingUser.bio } <a className='edit-btn' onClick={ this.onAddBio.bind(this) }><i className='fas fa-edit'></i></a></h6>)
+                                ):<h6 className='bio'>{viewingUser.bio}</h6> }
+                                { viewingUser.location !== '' && <p><i className='fas fa-location-arrow'></i> { viewingUser.location }</p> }
                                 { viewingUser.email !== '' && <p><i className="fas fa-envelope"></i> { viewingUser.email }</p> }
-                                <p><i className="fas fa-link"></i> <a href={ viewingUser.websiteUrl }>{ viewingUser.websiteUrl }</a></p>
+                                { viewingUser.company !== '' &&  <p><i className="fas fa-building"></i> { viewingUser.company }</p> }
+                                { viewingUser.websiteUrl !== '' && <p><i className="fas fa-link"></i> <a href={ viewingUser.websiteUrl }>{ viewingUser.websiteUrl }</a></p> }
                             </div>
                             <div className='user-counter-repositories'>
                                 <div className='counter-info'>
@@ -236,19 +354,40 @@ class UserListView extends React.Component{
                                 </div>
                                 <div className='user-repositories'>
                                     <h5>{viewingUser.login}'s repositories</h5>
-                                    { viewingUser.repositories.nodes.map( (node, index) =>{
-                                        return (
-                                            <div className='user-repository' key={ `user-repository-${index}` }>
-                                                <a href={ node.projectsUrl } target='_blank'>{node.name}</a>
-                                                <p>{ node.description }</p>
-                                                <p>
-                                                    { node.languages.nodes[0] && <span><i style={ {color:node.languages.nodes[0].color} } className="fas fa-circle"></i> {node.languages.nodes[0].name}</span> }&nbsp;&nbsp;
-                                                    <span><i className="fas fa-star"></i> {node.stargazers.totalCount}</span>&nbsp;&nbsp;
-                                                    <span><i className="fas fa-code-branch"></i> {node.forkCount}</span>
-                                                </p>
-                                            </div>
-                                        );
-                                    }) }
+                                    <AutoSizer disableHeight>
+                                        {({width}) => (
+                                            <Grid
+                                            cellRenderer={({columnIndex, key, rowIndex, style})=>{
+                                                const repository = viewingUser.repositories.nodes[rowIndex + columnIndex];
+                                            
+                                                return repository ? (
+                                                    <div className='user-repository' key={ key } style={ style }>
+                                                        <a href={ repository.url } target='_blank'>{repository.name}</a>
+                                                        <p>{ repository.description }</p>
+                                                        <p>
+                                                            { repository.languages.nodes[0] && <span><i style={ {color:repository.languages.nodes[0].color} } className="fas fa-circle"></i> {repository.languages.nodes[0].name}</span> }&nbsp;&nbsp;
+                                                            <span><i className="fas fa-star"></i> {repository.stargazers.totalCount}</span>&nbsp;&nbsp;
+                                                            <span><i className="fas fa-code-branch"></i> {repository.forkCount}</span>
+                                                        </p>
+                                                    </div>
+                                                ):<div></div>;
+                                            }}
+                                            columnWidth={300}
+                                            columnCount={2}
+                                            height={450}
+                                            noContentRenderer={() => <div>No repositories found</div>}
+                                            overscanColumnCount={0}
+                                            overscanRowCount={100}
+                                            rowHeight={180}
+                                            rowCount={viewingUser.repositories.nodes.length / 2}
+                                            width={width}
+                                            />
+                                        )}
+                                    </AutoSizer>
+                                    { viewingUser.repositories.pageInfo.hasNextPage && 
+                                        <div className='rep-load-more'>
+                                            { this.state.isRepLoading ? <i className='fas fa-circle-notch fa-spin'></i>:<a onClick={ this.fetchMoreUserRepositories.bind(this) } className='btn btn-gh'>More Repositories</a> }
+                                        </div> }
                                 </div>
                             </div> 
                         </div>

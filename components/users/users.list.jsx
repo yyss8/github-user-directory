@@ -11,11 +11,10 @@ export default class extends React.Component{
 
         return (
             <div key={ key } style={ style }>
-                <img src={ users[index].avatarUrl } width="35" />&nbsp;&nbsp;<a href="javascript:void(0)" onClick={ () => this.props.onProfileClicked(index) }>{ users[index].login }</a>
+                <img src={ users[index].avatarUrl } width="35" />&nbsp;&nbsp;<a href="javascript:void(0)" onClick={ () => this.props.onProfileClicked(users[index].login) }>{ users[index].login }</a>
             </div>
         );
     }
-
 
     render(){
         
