@@ -188,9 +188,9 @@ module.exports = (env, options) =>{
                 //handle oauth access token fetching
                 app.post('/auth', bodyParser.json(), (req, res) =>{
 
-                    const baseUrl = 'https://github.com/login/oauth/access_token';
-                    //unsecured to have secret in client side
-                    const secretKey = '55955160a4425cd4a69b7ed51c3faf78ad00d884';
+//                     const baseUrl = 'https://github.com/login/oauth/access_token';
+//                     //unsecured to have secret in client side
+//                     const secretKey = '55955160a4425cd4a69b7ed51c3faf78ad00d884';
                     const clientId = '3aa8f369491b2bb00780';
                     const params = {
                         client_id:clientId,
